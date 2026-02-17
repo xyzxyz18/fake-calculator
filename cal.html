@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>计算器</title>
+    <style>
+        body {
+            background-color: #000;
+            color: white;
+            font-family: -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .calc {
+            width: 100%;
+            max-width: 350px;
+            background: #000;
+            padding: 20px;
+        }
+
+        .screen {
+            text-align: right;
+            padding: 10px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #history {
+            font-size: 20px;
+            color: #888;
+            min-height: 24px;
+            margin-bottom: 5px;
+        }
+
+        #display {
+            font-size: 70px;
+            font-weight: 300;
+            margin-bottom: 10px;
+            white-space: nowrap;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            height: 75px;
+            width: 75px;
+            border-radius: 50%;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s;
+        }
+
+        .num {
+            background-color: #333;
+            color: white;
+        }
+
+        .op {
+            background-color: #f1a33c;
+            color: white;
+            font-size: 35px;
+        }
+
+        .fn {
+            background-color: #a5a5a5;
+            color: black;
+        }
+
+        button:active {
+            background-color: #777;
+        }
+
+        .zero {
+            grid-column: span 2;
+            width: 162px;
+            border-radius: 40px;
+            text-align: left;
+            padding-left: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="calc">
+        <div class="screen">
+            <div id="history"></div>
+            <div id="display">0</div>
+        </div>
+        <div class="buttons">
+            <button class="fn" onclick="reset()">AC</button>
+            <button class="fn">+/-</button>
+            <button class="fn">%</button>
+            <button class="op" onclick="handleOp('÷')">÷</button>
+
+            <button class="num" onclick="pressNum('7')">7</button>
+            <button class="num" onclick="pressNum('8')">8</button>
+            <button class="num" onclick="pressNum('9')">9</button>
+            <button class="op" onclick="handleOp('×')">×</button>
+
+            <button class="num" onclick="pressNum('4')">4</button>
+            <button class="num" onclick="pressNum('5')">5</button>
+            <button class="num" onclick="pressNum('6')">6</button>
+            <button class="op" onclick="handleOp('-')">-</button>
+
+            <button class="num" onclick="pressNum('1')">1</button>
+            <button class="num" onclick="pressNum('2')">2</button>
+            <button class="num" onclick="pressNum('3')">3</button>
+            <button class="op" onclick="handleOp('+')">+</button>
+
+            <button class="num zero" onclick="pressNum('0')">0</button>
+            <button class="num">.</button>
+            <button class="op" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 【魔术参数设置】 ---
+        const targetD = 2162227; // 这里修改为你最终想让观众看到的数字
+
+        let magicMode = false;
+        let clickCount = 0;
+        let currentInput = "";
+        let a = 0, b = 0, c = 0, e = 0;
+        let stage = 1; // 1: 输入A, 2: 输入B, 3: 魔术阶段
+
+        const display = document.getElementById('display');
+        const historyDisp = document.getElementById('history');
+
+        function pressNum(num) {
+            if (!magicMode) {
+                // 正常逻辑：累计输入
+                if (currentInput === "0") currentInput = "";
+                currentInput += num;
+                display.innerText = currentInput;
+            } else {
+                // 魔术逻辑：点击计数
+                clickCount++;
+                // 历史记录实时跟随，增加真实感
+                historyDisp.innerText = c + " + " + "•".repeat(clickCount);
+
+                if (clickCount === 1) {
+                    // 显示前3位
+                    display.innerText = e.toString().substring(0, 3);
+                } else if (clickCount >= 5) {
+                    // 第5次点击及以后，强制显示完整的 E
+                    display.innerText = e;
+                }
+            }
+        }
+
+        function handleOp(op) {
+            if (stage === 1) {
+                // 记录 A，准备输入 B
+                a = parseFloat(currentInput || "0");
+                historyDisp.innerText = a + " " + op + " ";
+                currentInput = "";
+                stage = 2;
+            } else if (stage === 3) {
+                // 已经在 C 结果页了，再次点符号，启动魔术
+                magicMode = true;
+                e = targetD - c;
+                historyDisp.innerText = c + " + ";
+                display.innerText = "0"; // 关键：归零让观众输入
+                currentInput = "";
+            }
+        }
+
+        function calculate() {
+            if (stage === 2) {
+                // 完成 c = a + b 的计算
+                b = parseFloat(currentInput || "0");
+                c = a + b;
+                historyDisp.innerText = a + " + " + b + " =";
+                display.innerText = c;
+                currentInput = "";
+                stage = 3; // 进入等待激活魔术的状态
+            } else if (magicMode) {
+                // 魔术结束，按下等号，显示终极 D
+                historyDisp.innerText = c + " + " + e + " =";
+                display.innerText = targetD;
+            }
+        }
+
+        function reset() {
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>
